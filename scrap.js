@@ -2,8 +2,11 @@
 const {get} = require('axios');
 const cheerio = require('cheerio'), cheerioTableparser = require('cheerio-tableparser');
 const puppeteer = require('puppeteer');
+const {getEditDistance} = require('./editDistance');
 
-
+const cityname = require('./data/city_coding.json'), 
+      airline = require('./data/data_airlines.json'), 
+      status_codes = require('./data/iata_status.json');
 
 const airportList = 
 {
@@ -38,6 +41,51 @@ const getCount = async (page)=> {
   return await page.$$eval('body', a => a.length);
 }
 
+const checkDistance = (text)=>{
+  for(let x = 0; x < cityname.length; x++){
+    const distance = getEditDistance(cityname[x], text);
+    if(distance === 0){
+      return 'city';
+    }
+  }
+  for(let y = 0; y < airline.length; y++){
+    const distance = getEditDistance(airline[y], text);
+    if(distance === 0){
+      return 'airline';
+    }
+  }
+  for(let z = 0; z < status_codes.length; z++){
+    const distance = getEditDistance(status_codes[z], text);
+    if(distance === 0){
+      return 'status';
+    }
+  }
+  return false;
+}
+
+const findClass = (child, tag, iter=5)=>{
+  iter--;
+
+  if("class" in child.parent.attribs){
+    const classes = child.parent.attribs.class.trim().split(' ').filter(Boolean);
+    for(let x in classes){
+      const className = classes[x];
+      if(!(className in classList)){
+        classList[className] = {city:0, airline:0, status:0, total:0};
+      }
+      classList[className][tag]++;
+      classList[className].total++;
+    }
+    if(iter > 0){
+      findClass(child.parent, tag, iter);
+    }
+  }
+  else{
+    findClass(child.parent, tag, iter);
+  }
+
+}
+
 const getFIDS = (elem) => {
   if(elem.hasOwnProperty('children') && elem.children.length){
    for(let i in elem.children){
@@ -46,9 +94,15 @@ const getFIDS = (elem) => {
         if(child.hasOwnProperty("type")){
           if(child.type === 'text'){
             //editDistance with cityname, airline, status
-            const data = child.data.trim();
-            if(data !== ''){
-            console.log(data);
+            const text = child.data.trim();
+            if(text !== ''){
+              const tag = checkDistance(text);
+              if(tag){
+                /*console.log(text);
+                console.log(tag);*/
+                findClass(child, tag);
+                }
+              }
             }
           }
           else{
@@ -57,7 +111,6 @@ const getFIDS = (elem) => {
         }
     }
   }
-}
 
 
 const autoScroll = async (page)=>{
@@ -90,7 +143,7 @@ const classList = {};
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1366, height: 768});
-  await page.goto('https://www.bud.hu/en/departures', {waitUntil: 'networkidle2'});
+  await page.goto('https://www.heathrow.com/arrivals', {waitUntil: 'networkidle2'});
   //await page.waitFor(3000);
  await autoScroll(page);
  await page.waitFor(2000);
