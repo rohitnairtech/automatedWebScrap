@@ -8,54 +8,22 @@ const cityname = require('./data/city_coding.json'),
       airline = require('./data/data_airlines.json'), 
       status_codes = require('./data/iata_status.json');
 
-const airportList = 
-{
-   qatar:
-   {
-      type:'static',
-      arr:{
-         uri:'https://qaiairport.com/en/flight-information/Pages/Arrivals.aspx',
-         dataTable: {name:'tblArrivals', type:'id'}
-            }, 
-      dept:{
-         uri:'https://qaiairport.com/en/flight-information/Pages/Departures.aspx',
-         dataTable: {name:'tblDepartures', type:'id'}
-            }
-   },
-   budapest:
-   {
-      type:'dynamic',
-      arr:{
-         uri:'https://www.bud.hu/en/arrivals', 
-         dataTable:{name:'data-table', type:'class'}},
-      dept:{
-         uri:'https://www.bud.hu/en/departures',
-         dataTable:{name:'data-table', type:'class'}},
-   }
-};
-
-const AirportFIDS = {};
-
-
-const getCount = async (page)=> {
-  return await page.$$eval('body', a => a.length);
-}
-
 const checkDistance = (text)=>{
+  text = text.toLowerCase();
   for(let x = 0; x < cityname.length; x++){
-    const distance = getEditDistance(cityname[x], text);
+    const distance = getEditDistance(cityname[x].toLowerCase(), text);
     if(distance === 0){
       return 'city';
     }
   }
   for(let y = 0; y < airline.length; y++){
-    const distance = getEditDistance(airline[y], text);
+    const distance = getEditDistance(airline[y].toLowerCase(), text);
     if(distance === 0){
       return 'airline';
     }
   }
   for(let z = 0; z < status_codes.length; z++){
-    const distance = getEditDistance(status_codes[z], text);
+    const distance = getEditDistance(status_codes[z].toLowerCase(), text);
     if(distance === 0){
       return 'status';
     }
@@ -143,7 +111,7 @@ const classList = {};
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1366, height: 768});
-  await page.goto('https://www.heathrow.com/arrivals', {waitUntil: 'networkidle2'});
+  await page.goto('https://www.bud.hu/en/arrivals', {waitUntil: 'networkidle2'});
   //await page.waitFor(3000);
  await autoScroll(page);
  await page.waitFor(2000);
@@ -157,67 +125,38 @@ const classList = {};
       getFIDS(elem);
     }
   }
-  console.log(classList);
- await page.waitFor(2000);
+  //console.log(classList);
+  const bestFive = [];
+  for(let x in classList){
+    const currClass = classList[x];
+    const bestLen = bestFive.length;
+    const data = {name:x, total:currClass.total};
+    if(bestLen){
 
-
-/*  const content = await page.content();
-  const $ = cheerio.load(content);
-  cheerioTableparser($);
-  const data = $('table').parsetable(true,true,true);
-  //console.log(data);
-  let i;
-  const table = {};
-  for (i=0;i<data.length;i++){
-     console.log(data[i][0]);
-     const title = data[i].shift();
-        table[title] = [];
-        for(let x in data[i]){
-           console.log(x);
-           if(data[i][x] !== 'Please wait...' || data[i][x] !== '' || data[i][x] !== null){
-              table[title].push(data[i][x]);
-           }
+      for(let i=0; i < bestLen; i++){
+        const currBest = bestFive[i];
+        if(currClass.total > currBest.total){
+          bestFive.splice(i, 0, data);
         }
+      }
+
+    }
+    else{
+      bestFive.push(data);
+    }
   }
-  console.log(table);
-*/  /*await page.waitForSelector('.f0n8F');*/
-  /*console.log(await page.$('.f0n8F input'));*/
-/*  await page.keyboard.press('Tab', { delay: 200 });
-  await page.keyboard.type('aibuddhaofficial', { delay: 100 });  
-  await page.keyboard.press('Tab', { delay: 130 });
-  await page.keyboard.type('321enlighten', { delay: 104 });
-  await page.keyboard.press('Tab', { delay: 110 });
-  await page.keyboard.press('Tab', { delay: 100 });
-  await page.keyboard.press('Enter');
-  await page.goto('https://instagram.com/direct/inbox/');
-  await page.waitFor(2000);*/
-  //await page.screenshot({path: 'example.png'});
+
+  if(bestFive.length > 5){
+    bestFive.length=5;
+  }
+  console.log(bestFive);
+
+
+
+
+
+ await page.waitFor(2000);
 
   await browser.close();
 
 })();
-
-/*const webscrapper = (uri, dataTable)=>{
-   get(uri).then(({data})=>{
-      const $ = cheerio.load(data);
-      cheerioTableparser($);
-      data = (dataTable.type==='id') ? $(`#${dataTable.name}`).parsetable(true,true,true) : $(`.${dataTable.name}`).parsetable(true,true,true);
-      data.shift();
-      data.pop();
-      let i;
-      const FIDS = {};
-      for(i=0;i<data.length; i++){
-         const keyName = data[i].shift();
-         FIDS[keyName] = data[i];
-      }
-      console.log(FIDS);
-    });
-}
-
- webscrapper('https://www.bud.hu/en/departures', currData.dataTable);*/
-
-/*
-for(let data in airportList.qatar){
-   const currData = airportList.qatar[data];
-   webscrapper(currData.uri, currData.dataTable);
-}*/
