@@ -155,10 +155,33 @@ const browseSite = async (urlList)=>{
     bestFive.length=5;
   }
 
-  for(let x in bestFive){
-    const elem = $('.'+bestFive[x]);
-    console.log(elem);
+  const traverse = (item)=>{
+      console.log(item);
+      if(item.hasOwnProperty('children') && item.children.length){
+        const child = item.children;
+        if(child.hasOwnProperty("type") && child.type === "text"){
+          const text = child.data.trim();
+          console.log(text);
+        }
+        else{
+          traverse(item.children);
+        }
+      }
+      else{
+        if(item.hasOwnProperty("type") && item.type === "text"){
+          console.log(item.data);
+        }
+      }
   }
+
+  for(let x in bestFive){
+    console.log('searching for '+bestFive[x].name);
+    const elem = $('.'+bestFive[x].name);
+    elem.each((i, item)=>{
+      traverse(item);
+    });
+  }
+
   console.log(bestFive);
   
   }
