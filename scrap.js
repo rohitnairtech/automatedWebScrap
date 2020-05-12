@@ -46,7 +46,7 @@ const browseSite = async (urlList)=>{
           classList[className] = {city:0, airline:0, status:0, total:0};
         }
         classList[className][tag]++;
-        classList[className].total++;
+        classList[className].total += iter;
       }
       if(iter > 0){
         findClass(child.parent, tag, iter);
@@ -159,13 +159,16 @@ const browseSite = async (urlList)=>{
       //console.log(item);
       if(item.hasOwnProperty('children') && item.children.length){
         const child = item.children;
+        for(let y in child){
+          const currChild = child[y];
+          console.log(currChild);
         if(child.hasOwnProperty("type") && child.type === "text"){
-          console.log(child);
           const text = child.data.trim();
-          console.log(text);
         }
         else{
-          traverse(item.children);
+          traverse(child);
+        }
+          
         }
       }
       else if(item.hasOwnProperty("type") && item.type === "text"){
@@ -178,7 +181,8 @@ const browseSite = async (urlList)=>{
     console.log('searching for '+bestFive[x].name);
     const elem = $('.'+bestFive[x].name);
     elem.each((i, item)=>{
-      traverse(item);
+      //traverse(item);
+      console.log($(item).text().replace(/\s+/g," "));
     });
   }
 
