@@ -156,10 +156,11 @@ const browseSite = async (urlList)=>{
   }
 
   const traverse = (item)=>{
-      console.log(item);
+      //console.log(item);
       if(item.hasOwnProperty('children') && item.children.length){
         const child = item.children;
         if(child.hasOwnProperty("type") && child.type === "text"){
+          console.log(child);
           const text = child.data.trim();
           console.log(text);
         }
@@ -167,11 +168,10 @@ const browseSite = async (urlList)=>{
           traverse(item.children);
         }
       }
-      else{
-        if(item.hasOwnProperty("type") && item.type === "text"){
-          console.log(item.data);
-        }
+      else if(item.hasOwnProperty("type") && item.type === "text"){
+          console.log(item);
       }
+
   }
 
   for(let x in bestFive){
