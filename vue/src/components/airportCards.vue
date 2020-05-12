@@ -6,7 +6,7 @@
     justify="center"
   >
   <v-col cols="12" align="center" justify="center" v-for="(card, index) in cardData" :key="index">
-    <Cards :cardInfo="card" :cardIndex="index"/>
+    <Cards :cardInfo="card" :cardIndex="index" :countries="airportData"/>
   </v-col>
 
 
@@ -22,12 +22,14 @@
 </v-container>
 </template>
 <script>
+import {post} from 'axios';
 import Cards from './cards';
-
+import airportData from '../../cleanData.json';
   export default {
     data () {
       return {
-        cardData:[]
+        cardData:[],
+        airportData: airportData
       }
     },
 
@@ -52,7 +54,13 @@ import Cards from './cards';
       },
       addData(i, data){
         this.cardData.splice(i, 1, data);
+        data.index = i;
         //push to servers
+        post('http://localhost:5007/scrap', data).then(d=>{
+          console.log(d);
+        }).catch(e=>{
+          console.log(e);
+        });
       }
     },
     mounted(){
