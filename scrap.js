@@ -113,6 +113,7 @@ const browseSite = async (urlList)=>{
      });
 
   const page = await browser.newPage();
+  await page.setDefaultNavigationTimeout(0);
   await page.setViewport({ width: 1366, height: 768});
   for(let x in urlList){
     classList = {};
@@ -131,7 +132,7 @@ const browseSite = async (urlList)=>{
       getFIDS(elem);
     }
   }
-  //console.log(classList);
+
   const bestFive = [];
   for(let x in classList){
     const currClass = classList[x];
@@ -218,7 +219,7 @@ const browseSite = async (urlList)=>{
   
   }
   //await page.waitFor(3000);
-  
+
   await browser.close();
 
 }
