@@ -1,5 +1,5 @@
 "use strict";
-const cheerio = require('cheerio'), cheerioTableparser = require('cheerio-tableparser');
+const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const {getEditDistance} = require('./editDistance');
 
@@ -105,7 +105,7 @@ const browseSite = async (urlList)=>{
   }
 
 
-  const classList = {};
+  let classList = {};
   
   const browser = await puppeteer.launch({
        headless: true,
@@ -115,11 +115,12 @@ const browseSite = async (urlList)=>{
   const page = await browser.newPage();
   await page.setViewport({ width: 1366, height: 768});
   for(let x in urlList){
+    classList = {};
     const url = urlList[x];
-    await page.goto('https://www.bud.hu/en/arrivals', {waitUntil: 'networkidle2'});
+    await page.goto(url, {waitUntil: 'networkidle2'});
     
  await autoScroll(page);
- await page.waitFor(2000);
+ await page.waitFor(1000);
  const content = await page.content();
  const $ = cheerio.load(content);
 
@@ -155,48 +156,69 @@ const browseSite = async (urlList)=>{
     bestFive.length=5;
   }
 
-  const traverse = (item)=>{
-      //console.log(item);
-      if(item.hasOwnProperty('children') && item.children.length){
-        const child = item.children;
-        for(let y in child){
-          const currChild = child[y];
-          console.log(currChild);
-        if(child.hasOwnProperty("type") && child.type === "text"){
-          const text = child.data.trim();
-        }
-        else{
-          traverse(child);
-        }
-          
-        }
-      }
-      else if(item.hasOwnProperty("type") && item.type === "text"){
-          console.log(item);
-      }
-
+  const traverseTextFromElement = (item)=>{
+    var text = "";
+    if(item.hasOwnProperty("type") && item.type === "text"){
+          text = item.data.trim();
+    }else if(item.hasOwnProperty('children') && item.children.length){
+          const child = item.children[0];
+          if(child){
+            text = traverseTextFromElement(child);
+          }
+    }
+    return text;
   }
 
+  const traverseAllTextFromElement = (item, resArray)=>{
+    var text = "";
+    if(item.hasOwnProperty("type") && item.type === "text"){
+          text = item.data.trim();
+          resArray.push(text);
+    }else if(item.hasOwnProperty('children') && item.children.length){
+          const children = item.children
+          children.forEach(child=>{
+             text = traverseTextFromElement(child)
+             resArray.push(text)
+          })
+    }
+  }
+
+  const traverse = (item)=>{
+      console.log(item);
+      if(item.hasOwnProperty('children') && item.children.length){
+        const child = item.children;
+        if(child.hasOwnProperty("type") && child.type === "text"){
+          const text = child.data.trim();
+          console.log(text);
+        }
+        else{
+          traverse(item.children);
+        }
+      }
+      else{
+        if(item.hasOwnProperty("type") && item.type === "text"){
+          console.log(item.data);
+        }
+      }
+  }
+  
   for(let x in bestFive){
     console.log('searching for '+bestFive[x].name);
     const elem = $('.'+bestFive[x].name);
+    
     elem.each((i, item)=>{
-      //traverse(item);
-      console.log($(item).text().replace(/\s+/g," "));
+      var finalResult = []
+      traverseAllTextFromElement(item, finalResult);
+      console.log(finalResult)
     });
+    console.log(x)
+    
+    console.log("<------->")
   }
-
-  console.log(bestFive);
   
   }
   //await page.waitFor(3000);
-
-
-
-
-
- await page.waitFor(2000);
-
+  
   await browser.close();
 
 }
