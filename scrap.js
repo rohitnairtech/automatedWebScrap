@@ -39,15 +39,14 @@ const browseSite = async (urlList)=>{
     iter--;
 
     if("class" in child.parent.attribs){
-      const classes = child.parent.attribs.class.trim().split(' ').filter(Boolean);
-      for(let x in classes){
-        const className = classes[x];
+      const className = child.parent.attribs.class.trim().split(' ').filter(Boolean).join();
+
         if(!(className in classList)){
           classList[className] = {city:0, airline:0, status:0, total:0};
         }
         classList[className][tag]++;
         classList[className].total += iter;
-      }
+
       if(iter > 0){
         findClass(child.parent, tag, iter);
       }
@@ -132,6 +131,7 @@ const browseSite = async (urlList)=>{
       getFIDS(elem);
     }
   }
+  //console.log(classList);
 
   const bestFive = [];
   for(let x in classList){
@@ -142,7 +142,7 @@ const browseSite = async (urlList)=>{
 
       for(let i=0; i < bestLen; i++){
         const currBest = bestFive[i];
-        if(currClass.total > currBest.total){
+        if(currClass.total > currBest.total && currClass.name !== currBest.name){
           bestFive.splice(i, 0, data);
         }
       }
@@ -204,8 +204,19 @@ const browseSite = async (urlList)=>{
   }
   
   for(let x in bestFive){
-    console.log('searching for '+bestFive[x].name);
-    const elem = $('.'+bestFive[x].name);
+    const {name} = bestFive[x];
+    let selector = '';
+    if(name.includes(',')){
+      const selectorList = name.split(',');
+      for(let y = 0; y < selectorList.length; y++){
+        selector += ' .' + selectorList[y];
+      }
+    }
+    else{
+      selector = '.'+name;
+    }
+    const elem = $(selector);
+    console.log('searching for '+name+ ' selector: '+selector);
     
     elem.each((i, item)=>{
       var finalResult = []
