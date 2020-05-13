@@ -209,8 +209,9 @@ const browseSite = async (urlList)=>{
     if(name.includes(',')){
       const selectorList = name.split(',');
       for(let y = 0; y < selectorList.length; y++){
-        selector += ' .' + selectorList[y];
+        selector += '.' + selectorList[y] + ', ';
       }
+      selector = selector.substring(0, selector.length - 2);
     }
     else{
       selector = '.'+name;
