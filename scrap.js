@@ -3,13 +3,14 @@ const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const {getEditDistance} = require('./editDistance');
 
+const {fidsModel, DB} = require('./db.js');
+var conn = new DB('wise-fly').connect();
+
 const cityname = require('./data/city_coding.json'), 
       airline = require('./data/data_airlines.json'), 
       status_codes = require('./data/iata_status.json');
 
-
-
-const browseSite = async (urlList)=>{
+const browseSite = async (url)=>{
 
 
   const checkDistance = (text)=>{
@@ -104,59 +105,6 @@ const browseSite = async (urlList)=>{
   }
 
 
-  let classList = {};
-  
-  const browser = await puppeteer.launch({
-       headless: true,
-       args: ['--lang=en-US,en'],
-     });
-
-  const page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(0);
-  await page.setViewport({ width: 1366, height: 768});
-  for(let x in urlList){
-    classList = {};
-    const url = urlList[x];
-    await page.goto(url, {waitUntil: 'networkidle2'});
-    
- await autoScroll(page);
- await page.waitFor(1000);
- const content = await page.content();
- const $ = cheerio.load(content);
-
-  const body = $('body *').contents();
-  for(let key in body){
-    const elem = body[key];
-    if(typeof elem === 'object' && elem.hasOwnProperty("type") && elem.type === 'tag' && elem.name !== 'script'){
-      getFIDS(elem);
-    }
-  }
-  //console.log(classList);
-
-  const bestFive = [];
-  for(let x in classList){
-    const currClass = classList[x];
-    const bestLen = bestFive.length;
-    const data = {name:x, total:currClass.total};
-    if(bestLen){
-
-      for(let i=0; i < bestLen; i++){
-        const currBest = bestFive[i];
-        if(currClass.total > currBest.total && currClass.name !== currBest.name){
-          bestFive.splice(i, 0, data);
-        }
-      }
-
-    }
-    else{
-      bestFive.push(data);
-    }
-  }
-
-  if(bestFive.length > 5){
-    bestFive.length=5;
-  }
-
   const traverseTextFromElement = (item)=>{
     var text = "";
     if(item.hasOwnProperty("type") && item.type === "text"){
@@ -202,6 +150,60 @@ const browseSite = async (urlList)=>{
         }
       }
   }
+
+
+  let classList = {};
+  
+  const browser = await puppeteer.launch({
+       headless: true,
+       args: ['--lang=en-US,en'],
+     });
+
+  const page = await browser.newPage();
+  await page.setDefaultNavigationTimeout(0);
+  await page.setViewport({ width: 1366, height: 768});
+    classList = {};
+    await page.goto(url, {waitUntil: 'networkidle2'});
+    
+ await autoScroll(page);
+ await page.waitFor(1000);
+ const content = await page.content();
+ const $ = cheerio.load(content);
+  
+ await browser.close();
+
+  const body = $('body *').contents();
+  for(let key in body){
+    const elem = body[key];
+    if(typeof elem === 'object' && elem.hasOwnProperty("type") && elem.type === 'tag' && elem.name !== 'script'){
+      getFIDS(elem);
+    }
+  }
+  //console.log(classList);
+
+  const bestFive = [];
+  for(let x in classList){
+    const currClass = classList[x];
+    const bestLen = bestFive.length;
+    const data = {name:x, total:currClass.total};
+    if(bestLen){
+
+      for(let i=0; i < bestLen; i++){
+        const currBest = bestFive[i];
+        if(currClass.total > currBest.total && currClass.name !== currBest.name){
+          bestFive.splice(i, 0, data);
+        }
+      }
+
+    }
+    else{
+      bestFive.push(data);
+    }
+  }
+
+  if(bestFive.length > 1){
+    bestFive.length=1;
+  }
   
   for(let x in bestFive){
     const {name} = bestFive[x];
@@ -209,9 +211,8 @@ const browseSite = async (urlList)=>{
     if(name.includes(',')){
       const selectorList = name.split(',');
       for(let y = 0; y < selectorList.length; y++){
-        selector += '.' + selectorList[y] + ', ';
+        selector += '.' + selectorList[y];
       }
-      selector = selector.substring(0, selector.length - 2);
     }
     else{
       selector = '.'+name;
@@ -219,25 +220,27 @@ const browseSite = async (urlList)=>{
     const elem = $(selector);
     console.log('searching for '+name+ ' selector: '+selector);
     
+    const fidsList = []
     elem.each((i, item)=>{
       var finalResult = []
       traverseAllTextFromElement(item, finalResult);
-      console.log(finalResult)
+      fidsList.push(finalResult);
     });
+    console.log(fidsList);
     console.log(x)
     
     console.log("<------->")
   }
   
-  }
+
   //await page.waitFor(3000);
 
-  await browser.close();
 
 }
 
 
-
+browseSite('https://qaiairport.com/en/flight-information/Pages/Arrivals.aspx');
+/*
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -257,11 +260,15 @@ app.get('/*', (req, res) => {
 });
 
 app.post('/scrap', ({body},res)=>{
-  console.log(body);
-  const {arrUri, depUri} = body;
+  const {airport, arrUri, depUri, webUri, index} = body;
   browseSite([arrUri, depUri]);
-  res.sendStatus(200)
+ new fidsModel({airport, url:webUri, arrUrl:arrUri, depUrl:depUri, page_id:index, status:'processing'}).then(()=>{
+  }).catch(e=>console.log(e));
+
+  res.sendStatus(200);
 });
 
 
-app.listen(port, () => console.log(`Dashboard server is listening on ${port}`));
+conn.then(()=>{
+  app.listen(port, () => console.log(`Dashboard server is listening on ${port}`));
+}).catch(e=>console.log(e));*/
