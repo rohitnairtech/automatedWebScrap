@@ -47,7 +47,9 @@ let fidsRegister = new mongoose.Schema({
     type:String,
     required:true
   },
-  status: Boolean,
+  page_id:Number,
+  status: String,
+  fids: Array,
   createdAt: Date,
   updatedAt: Date
 });

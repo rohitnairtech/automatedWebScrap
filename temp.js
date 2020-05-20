@@ -274,20 +274,28 @@ app.get('/*', (req, res) => {
 app.post('/scrap', ({body},res)=>{
   const {airport, arrUri, depUri, webUri, index} = body;
 
-  console.log(airport);
+
+   new fidsModel({airport, url:webUri, arrUrl:arrUri, depUrl:depUri, page_id:index, status:'processing', fids:data}).save()
+     .then(()=>{
+       console.log('inserted into DB #1');
+     }).catch(err=>console.log(err));
+   console.log('done');
+
+
+
  Promise.all([browseSite(arrUri), browseSite(depUri)])
   .then(data=>{
-   new fidsModel({airport, url:webUri, arrUrl:arrUri, depUrl:depUri, page_id:index, status:'done', fids:data}).save()
-     .then(()=>{
-       console.log('inserted into DB');
+    fidsModel.updateOne({ airport: airport }, { status: "done" })
+    .then(()=>{
+       console.log('inserted into DB status done');
      }).catch(err=>console.log(err));
    console.log('done');
 })
   .catch(err=>{
     console.log(err);
-   new fidsModel({airport, url:webUri, arrUrl:arrUri, depUrl:depUri, page_id:index, status:'failed'}).save()
-      .then(()=>{
-       console.log('inserted into DB - status failed');
+   fidsModel.updateOne({ airport: airport }, { status: "failed" })
+   .then(()=>{
+       console.log('inserted into DB status failed');
      }).catch(err=>console.log(err));
    console.log('failed');
   });

@@ -11,7 +11,7 @@
       color="purple"
     >
       <v-icon>mdi-airplane-takeoff</v-icon>
-      <v-toolbar-title class="font-weight-light">{{(cardInfo.airport && cardInfo.country)? cardInfo.airport + ' - ' + cardInfo.country : 'New Airport'}}</v-toolbar-title>
+      <v-toolbar-title class="font-weight-light">{{(cardInfo.airport)? cardInfo.airport : 'New Airport'}}</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn
         color="purple darken-3"
@@ -89,6 +89,9 @@
     <v-divider></v-divider>
     <v-card-actions>
       <v-spacer></v-spacer>
+        <v-col align="right">
+         <h4>{{(cardInfo.status?'Status: '+cardInfo.status:'')}}</h4>
+        </v-col>
       <v-btn
         :disabled="!isEditing"
         color="danger"
@@ -113,7 +116,7 @@
       bottom
       left
     >
-      Airport information updated
+      Airport information sent
     </v-snackbar>
   </v-card>  
 
@@ -159,6 +162,7 @@
             this.isEditing = !this.isEditing;
             this.hasSaved = true;
             this.$parent.addData(this.cardIndex, this.cardInfo);
+            this.cardInfo.status = 'Processing';
         }
         else{
             window.alert('some err');
